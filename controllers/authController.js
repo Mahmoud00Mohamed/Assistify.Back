@@ -54,9 +54,9 @@ export const signup = async (req, res) => {
   }
 };
 export const googleCallback = async (req, res) => {
-  try {
-    const { code } = req.query;
+  const { code } = req.query;
 
+  try {
     const { data } = await axios.post("https://oauth2.googleapis.com/token", {
       code,
       client_id: process.env.GOOGLE_CLIENT_ID,
@@ -100,18 +100,17 @@ export const googleCallback = async (req, res) => {
     const accessToken = generateAccessToken(user);
     const refreshToken = generateRefreshToken(user);
 
-    res.cookie("refreshToken", refreshToken, {
-      httpOnly: true,
-      secure: true,
-      sameSite: "None",
-      maxAge: 30 * 24 * 60 * 60 * 1000,
-    });
-
     res.cookie("accessToken", accessToken, {
       httpOnly: true,
       secure: true,
       sameSite: "None",
       maxAge: 30 * 60 * 1000, // 30 دقيقة
+    });
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "None",
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 يومًا
     });
 
     res.redirect("https://192.168.1.3:3001/pages/TDL.html");
