@@ -62,8 +62,7 @@ export const googleCallback = async (req, res) => {
       code,
       client_id: process.env.GOOGLE_CLIENT_ID,
       client_secret: process.env.GOOGLE_CLIENT_SECRET,
-      redirect_uri:
-        "https://0a6c-156-198-231-156.ngrok-free.app/auth/google/callback",
+      redirect_uri: "https://192.168.1.3:3001/auth/google/callback",
       grant_type: "authorization_code",
     });
 
@@ -108,9 +107,7 @@ export const googleCallback = async (req, res) => {
     const refreshToken = generateRefreshToken(user);
 
     // إعادة التوجيه إلى الصفحة الرئيسية مع التوكنات (أو يمكنك استخدام cookies)
-    res.redirect(
-      `https://0a6c-156-198-231-156.ngrok-free.app/dashboard?token=${accessToken}`
-    );
+    res.redirect(`https://192.168.1.3:3001/dashboard?token=${accessToken}`);
   } catch (error) {
     console.error("Google Auth Error:", error);
     res.status(500).json({ message: "Error during Google authentication" });
@@ -193,7 +190,7 @@ export const requestPasswordReset = async (req, res) => {
     }
     const resetToken = generateAccessToken(user._id);
     await redis.set(`resetPassword:${user._id}`, resetToken, "EX", 10 * 60);
-    const resetLink = `${process.env.FRONTEND_URL}frontend/authentication/reset-password.html?token=${resetToken}`;
+    const resetLink = `${process.env.FRONTEND_URL}authentication/reset-password.html?token=${resetToken}`;
     await sendEmail({
       to: email,
       subject: "🔒 Password Reset",
