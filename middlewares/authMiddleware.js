@@ -45,7 +45,7 @@ const authMiddleware = async (req, res, next) => {
     if (!token) {
       return res
         .status(401)
-        .json({ message: " No token provided, access denied." });
+        .json({ message: "❌ No token provided, access denied." });
     }
 
     // 🔍 Detect suspicious activity

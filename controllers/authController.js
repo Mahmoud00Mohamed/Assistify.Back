@@ -107,7 +107,7 @@ export const googleCallback = async (req, res) => {
       maxAge: 30 * 24 * 60 * 60 * 1000,
     });
 
-    // إرجاع accessToken في الاستجابة
+    // إرجاع accessToken في الاستجابة مع عنوان إعادة التوجيه
     res.status(200).json({
       accessToken,
       redirect: "https://192.168.1.3:3001/pages/TDL.html",
