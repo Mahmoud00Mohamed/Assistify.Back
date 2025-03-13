@@ -62,7 +62,8 @@ export const googleCallback = async (req, res) => {
       code,
       client_id: process.env.GOOGLE_CLIENT_ID,
       client_secret: process.env.GOOGLE_CLIENT_SECRET,
-      redirect_uri: "https://192.168.1.3:3001/auth/google/callback",
+      redirect_uri:
+        "https://assistify-back.onrender.com/api/auth/google/callback",
       grant_type: "authorization_code",
     });
 
@@ -87,9 +88,9 @@ export const googleCallback = async (req, res) => {
         firstName: given_name,
         lastName: family_name || "User",
         email,
-        password: await hashPassword(crypto.randomBytes(16).toString("hex")), // كلمة مرور عشوائية لأن Google لا يوفرها
+        password: await hashPassword(crypto.randomBytes(16).toString("hex")), // كلمة مرور عشوائية
         verificationCode: await hashPassword(verificationCode),
-        isVerified: true, // يمكنك تخطي التحقق لأن Google يثبت البريد
+        isVerified: true, // تخطي التحقق لأن Google يثبت البريد
       });
       await user.save();
 
@@ -103,11 +104,30 @@ export const googleCallback = async (req, res) => {
     }
 
     // إنشاء توكنات الوصول والتحديث
-    const accessToken = generateAccessToken(user);
-    const refreshToken = generateRefreshToken(user);
+    const accessToken = generateAccessToken(user._id);
+    const refreshToken = generateRefreshToken(user._id);
 
-    // إعادة التوجيه إلى الصفحة الرئيسية مع التوكنات (أو يمكنك استخدام cookies)
-    res.redirect(`https://192.168.1.3:3001/dashboard?token=${accessToken}`);
+    // تخزين refreshToken في Redis
+    await redis.set(
+      `refreshToken:${user._id}`,
+      refreshToken,
+      "EX",
+      30 * 24 * 60 * 60
+    );
+
+    // إرسال refreshToken في ملف تعريف الارتباط
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "None",
+      maxAge: 30 * 24 * 60 * 60 * 1000,
+    });
+
+    // إرسال استجابة JSON تحتوي على accessToken
+    res.status(200).json({
+      message: "✅ Google authentication successful.",
+      accessToken,
+    });
   } catch (error) {
     console.error("Google Auth Error:", error);
     res.status(500).json({ message: "Error during Google authentication" });
