@@ -18,6 +18,8 @@ import TokenBlacklist from "../models/TokenBlacklist.js";
 import { verifyCaptcha } from "../utils/captchaUtils.js";
 import redis from "../config/redisClient.js";
 import axios from "axios";
+import { OAuth2Client } from "google-auth-library";
+
 dotenv.config();
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -53,64 +55,70 @@ export const signup = async (req, res) => {
     res.status(400).json({ message: err.message });
   }
 };
-export const googleCallback = async (req, res) => {
-  const { code } = req.query;
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
+export const googleSignup = async (req, res) => {
+  const { token } = req.body;
 
   try {
-    const { data } = await axios.post("https://oauth2.googleapis.com/token", {
-      code,
-      client_id: process.env.GOOGLE_CLIENT_ID,
-      client_secret: process.env.GOOGLE_CLIENT_SECRET,
-      redirect_uri:
-        "https://assistify-back.onrender.com/api/auth/google/callback",
-      grant_type: "authorization_code",
+    // التحقق من رمز Google
+    const ticket = await client.verifyIdToken({
+      idToken: token,
+      audience: process.env.GOOGLE_CLIENT_ID, // تأكد من أن هذا يتطابق مع Client ID في الـ Frontend
     });
 
-    const { access_token } = data;
-    const userInfo = await axios.get(
-      "https://www.googleapis.com/oauth2/v3/userinfo",
-      {
-        headers: { Authorization: `Bearer ${access_token}` },
-      }
-    );
+    const payload = ticket.getPayload();
+    const { email, given_name: firstName, family_name: lastName } = payload;
 
-    const { email, given_name, family_name } = userInfo.data;
+    // التحقق مما إذا كان المستخدم موجودًا بالفعل
     let user = await User.findOne({ email });
 
     if (!user) {
-      const verificationCode = crypto.randomBytes(3).toString("hex");
+      // إذا لم يكن المستخدم موجودًا، إنشاء حساب جديد
       user = new User({
-        firstName: given_name,
-        lastName: family_name || "User",
+        firstName,
+        lastName: lastName || "", // بعض حسابات Google قد لا تحتوي على اسم عائلة
         email,
-        password: await hashPassword(crypto.randomBytes(16).toString("hex")),
-        verificationCode: await hashPassword(verificationCode),
-        isVerified: true, // الحساب يتم التحقق منه تلقائيًا
+        password: await hashPassword(crypto.randomBytes(16).toString("hex")), // كلمة مرور عشوائية لأننا لا نحتاجها مع Google
+        isVerified: true, // حسابات Google موثوقة افتراضيًا
       });
       await user.save();
-
-      await sendEmail({
-        to: email,
-        subject: "🎉 Welcome to Our App!",
-        type: "welcome",
-        data: { firstName: given_name },
-      });
     }
 
-    const accessToken = generateAccessToken(user);
-    const refreshToken = generateRefreshToken(user);
+    // إصدار التوكنات
+    const accessToken = generateAccessToken(user._id);
+    const refreshToken = generateRefreshToken(user._id);
 
+    // حفظ refreshToken في Redis
+    await redis.set(
+      `refreshToken:${user._id}`,
+      refreshToken,
+      "EX",
+      30 * 24 * 60 * 60 // 30 يومًا
+    );
+
+    // إعداد الكوكيز
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
       secure: true,
       sameSite: "None",
-      maxAge: 30 * 24 * 60 * 60 * 1000,
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 يومًا
     });
 
-    res.redirect("https://192.168.1.3:3001/pages/TDL.html");
-  } catch (error) {
-    console.error("Google Auth Error:", error);
-    res.status(500).json({ message: "Error during Google authentication" });
+    // إرجاع الاستجابة
+    res.status(200).json({
+      success: true,
+      message: user.isVerified
+        ? "✅ Signed in successfully with Google."
+        : "📩 Account created. Please check your email to verify.",
+      accessToken,
+    });
+  } catch (err) {
+    console.error("Google signup error:", err);
+    res.status(400).json({
+      success: false,
+      message: "❌ Failed to sign up with Google. Please try again.",
+    });
   }
 };
 export const login = async (req, res) => {
@@ -190,7 +198,7 @@ export const requestPasswordReset = async (req, res) => {
     }
     const resetToken = generateAccessToken(user._id);
     await redis.set(`resetPassword:${user._id}`, resetToken, "EX", 10 * 60);
-    const resetLink = `${process.env.FRONTEND_URL}authentication/reset-password.html?token=${resetToken}`;
+    const resetLink = `${process.env.FRONTEND_URL}frontend/authentication/reset-password.html?token=${resetToken}`;
     await sendEmail({
       to: email,
       subject: "🔒 Password Reset",

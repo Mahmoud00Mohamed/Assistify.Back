@@ -11,7 +11,7 @@ import {
   refreshAccessToken,
   logout,
   checkUsername,
-  googleCallback,
+  googleSignup,
 } from "../controllers/authController.js";
 
 const router = express.Router();
@@ -24,7 +24,6 @@ const authLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
 });
-router.get("/auth/google/callback", googleCallback);
 // تطبيق الـ Rate Limiting على المسارات الحساسة
 router.post("/signup", authLimiter, signup);
 router.post("/login", authLimiter, login);
@@ -32,7 +31,7 @@ router.post("/password-reset", authLimiter, requestPasswordReset);
 router.post("/verify-email", authLimiter, verifyEmail);
 router.post("/resend-code", authLimiter, resendCode);
 router.get("/check-username", checkUsername);
-
+router.post("/google-signup", googleSignup);
 // باقي المسارات بدون Rate Limiting
 router.post("/reset-password", resetPassword);
 router.post("/refresh-token", refreshAccessToken);
