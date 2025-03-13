@@ -1,15 +1,11 @@
-import nodemailer from "nodemailer";
+import sgMail from "@sendgrid/mail";
 import dotenv from "dotenv";
 
 dotenv.config();
 
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-});
+// تعيين مفتاح API الخاص بـ SendGrid
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+
 // Base styles with a professional, premium aesthetic
 const styles = {
   wrapper: `
@@ -226,7 +222,7 @@ const footer = () => `
     <p>Need help? Reach out to <a href="mailto:support@Assistify.com" style="${
       styles.link
     }">support@Assistify.com</a></p>
-    <p>&copy; ${new Date().getFullYear()} Assistify, Inc. All rights reserved.</p>
+    <p>© ${new Date().getFullYear()} Assistify, Inc. All rights reserved.</p>
     <p><a href="#" style="${styles.link}">Privacy</a> | 
        <a href="#" style="${styles.link}">Terms</a> | 
        <a href="#" style="${styles.link}">Unsubscribe</a></p>
@@ -239,13 +235,13 @@ const sendEmail = async ({ to, subject, type, data }) => {
     const { subject: templateSubject, html } = template(data);
 
     const mailOptions = {
-      from: `"Assistify" <${process.env.EMAIL_USER}>`,
+      from: `"Assistify" <${process.env.EMAIL_USER}>`, // تأكد من أن هذا البريد تم التحقق منه في SendGrid
       to,
       subject: subject || templateSubject,
       html,
     };
 
-    await transporter.sendMail(mailOptions);
+    await sgMail.send(mailOptions);
     console.log(`✅ Email delivered to ${to}`);
     return { success: true, recipient: to };
   } catch (error) {
