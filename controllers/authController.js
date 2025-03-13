@@ -54,9 +54,9 @@ export const signup = async (req, res) => {
   }
 };
 export const googleCallback = async (req, res) => {
-  const { code } = req.query;
-
   try {
+    const { code } = req.query;
+
     const { data } = await axios.post("https://oauth2.googleapis.com/token", {
       code,
       client_id: process.env.GOOGLE_CLIENT_ID,
@@ -107,11 +107,14 @@ export const googleCallback = async (req, res) => {
       maxAge: 30 * 24 * 60 * 60 * 1000,
     });
 
-    // إرجاع accessToken في الاستجابة مع عنوان إعادة التوجيه
-    res.status(200).json({
-      accessToken,
-      redirect: "https://192.168.1.3:3001/pages/TDL.html",
+    res.cookie("accessToken", accessToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "None",
+      maxAge: 30 * 60 * 1000, // 30 دقيقة
     });
+
+    res.redirect("https://192.168.1.3:3001/pages/TDL.html");
   } catch (error) {
     console.error("Google Auth Error:", error);
     res.status(500).json({ message: "Error during Google authentication" });
