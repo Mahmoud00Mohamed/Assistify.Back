@@ -53,19 +53,8 @@ export const signup = async (req, res) => {
     res.status(400).json({ message: err.message });
   }
 };
-// controllers/authController.js
-export const googleInit = (req, res) => {
-  const clientId = process.env.GOOGLE_CLIENT_ID;
-  const redirectUri =
-    "https://assistify-back.onrender.com/api/auth/google/callback";
-  const scope = "email profile";
-  const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=${scope}`;
-
-  res.status(200).json({ redirectUrl: googleAuthUrl });
-};
-
 export const googleCallback = async (req, res) => {
-  const { code } = req.query; // رمز الترخيص من Google
+  const { code } = req.query;
 
   try {
     const { data } = await axios.post("https://oauth2.googleapis.com/token", {
@@ -108,16 +97,10 @@ export const googleCallback = async (req, res) => {
       });
     }
 
-    const accessToken = generateAccessToken(user._id);
-    const refreshToken = generateRefreshToken(user._id);
+    const accessToken = generateAccessToken(user);
+    const refreshToken = generateRefreshToken(user);
 
-    await redis.set(
-      `refreshToken:${user._id}`,
-      refreshToken,
-      "EX",
-      30 * 24 * 60 * 60
-    );
-
+    // تعيين الكوكيز
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
       secure: true,
@@ -125,20 +108,13 @@ export const googleCallback = async (req, res) => {
       maxAge: 30 * 24 * 60 * 60 * 1000,
     });
 
-    // إرجاع الـ accessToken في الاستجابة JSON
-    res.status(200).json({
-      message: "✅ Google authentication successful.",
-      accessToken,
-    });
+    // إعادة التوجيه بدون تمرير التوكن في URL
+    res.redirect("https://192.168.1.3:3001/pages/TDL.html");
   } catch (error) {
     console.error("Google Auth Error:", error);
     res.status(500).json({ message: "Error during Google authentication" });
   }
 };
-
-// routes/authRoutes.js
-router.get("/auth/google/init", googleInit);
-router.get("/auth/google/callback", googleCallback);
 export const login = async (req, res) => {
   const { email, password, captchaToken } = req.body;
   if (!(await verifyCaptcha(captchaToken))) {
