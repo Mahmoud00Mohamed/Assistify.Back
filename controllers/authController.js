@@ -53,11 +53,21 @@ export const signup = async (req, res) => {
     res.status(400).json({ message: err.message });
   }
 };
+// controllers/authController.js
+export const googleInit = (req, res) => {
+  const clientId = process.env.GOOGLE_CLIENT_ID;
+  const redirectUri =
+    "https://assistify-back.onrender.com/api/auth/google/callback";
+  const scope = "email profile";
+  const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=${scope}`;
+
+  res.status(200).json({ redirectUrl: googleAuthUrl });
+};
+
 export const googleCallback = async (req, res) => {
   const { code } = req.query; // رمز الترخيص من Google
 
   try {
-    // استبدال رمز الترخيص بـ Access Token
     const { data } = await axios.post("https://oauth2.googleapis.com/token", {
       code,
       client_id: process.env.GOOGLE_CLIENT_ID,
@@ -68,8 +78,6 @@ export const googleCallback = async (req, res) => {
     });
 
     const { access_token } = data;
-
-    // الحصول على بيانات المستخدم من Google
     const userInfo = await axios.get(
       "https://www.googleapis.com/oauth2/v3/userinfo",
       {
@@ -78,23 +86,20 @@ export const googleCallback = async (req, res) => {
     );
 
     const { email, given_name, family_name } = userInfo.data;
-
-    // التحقق مما إذا كان المستخدم موجودًا بالفعل
     let user = await User.findOne({ email });
+
     if (!user) {
-      // إنشاء مستخدم جديد
       const verificationCode = crypto.randomBytes(3).toString("hex");
       user = new User({
         firstName: given_name,
         lastName: family_name || "User",
         email,
-        password: await hashPassword(crypto.randomBytes(16).toString("hex")), // كلمة مرور عشوائية
+        password: await hashPassword(crypto.randomBytes(16).toString("hex")),
         verificationCode: await hashPassword(verificationCode),
-        isVerified: true, // تخطي التحقق لأن Google يثبت البريد
+        isVerified: true,
       });
       await user.save();
 
-      // اختياري: إرسال بريد ترحيبي
       await sendEmail({
         to: email,
         subject: "🎉 Welcome to Our App!",
@@ -103,11 +108,9 @@ export const googleCallback = async (req, res) => {
       });
     }
 
-    // إنشاء توكنات الوصول والتحديث
     const accessToken = generateAccessToken(user._id);
     const refreshToken = generateRefreshToken(user._id);
 
-    // تخزين refreshToken في Redis
     await redis.set(
       `refreshToken:${user._id}`,
       refreshToken,
@@ -115,7 +118,6 @@ export const googleCallback = async (req, res) => {
       30 * 24 * 60 * 60
     );
 
-    // إرسال refreshToken في ملف تعريف الارتباط
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
       secure: true,
@@ -123,7 +125,7 @@ export const googleCallback = async (req, res) => {
       maxAge: 30 * 24 * 60 * 60 * 1000,
     });
 
-    // إرسال استجابة JSON تحتوي على accessToken
+    // إرجاع الـ accessToken في الاستجابة JSON
     res.status(200).json({
       message: "✅ Google authentication successful.",
       accessToken,
@@ -133,6 +135,10 @@ export const googleCallback = async (req, res) => {
     res.status(500).json({ message: "Error during Google authentication" });
   }
 };
+
+// routes/authRoutes.js
+router.get("/auth/google/init", googleInit);
+router.get("/auth/google/callback", googleCallback);
 export const login = async (req, res) => {
   const { email, password, captchaToken } = req.body;
   if (!(await verifyCaptcha(captchaToken))) {
