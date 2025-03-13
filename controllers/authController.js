@@ -100,7 +100,6 @@ export const googleCallback = async (req, res) => {
     const accessToken = generateAccessToken(user);
     const refreshToken = generateRefreshToken(user);
 
-    // تعيين الكوكيز
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
       secure: true,
@@ -108,8 +107,11 @@ export const googleCallback = async (req, res) => {
       maxAge: 30 * 24 * 60 * 60 * 1000,
     });
 
-    // إعادة التوجيه بدون تمرير التوكن في URL
-    res.redirect("https://192.168.1.3:3001/pages/TDL.html");
+    // إرجاع accessToken في الاستجابة
+    res.status(200).json({
+      accessToken,
+      redirect: "https://192.168.1.3:3001/pages/TDL.html",
+    });
   } catch (error) {
     console.error("Google Auth Error:", error);
     res.status(500).json({ message: "Error during Google authentication" });
