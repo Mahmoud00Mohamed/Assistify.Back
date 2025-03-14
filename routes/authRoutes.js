@@ -11,8 +11,8 @@ import {
   refreshAccessToken,
   logout,
   checkUsername,
-  googleAuth, // أضف هذا
 } from "../controllers/authController.js";
+import passport from "../config/auth.js";
 
 const router = express.Router();
 
@@ -36,5 +36,37 @@ router.get("/check-username", checkUsername);
 router.post("/reset-password", resetPassword);
 router.post("/refresh-token", refreshAccessToken);
 router.post("/logout", logout);
-router.post("/google", authLimiter, googleAuth);
+
+router.get(
+  "/google",
+  passport.authenticate("google", { scope: ["profile", "email"] })
+);
+
+router.get(
+  "/google/callback",
+  passport.authenticate("google", { failureRedirect: "/login" }),
+  (req, res) => {
+    const accessToken = generateAccessToken(req.user._id);
+    const refreshToken = generateRefreshToken(req.user._id);
+
+    // حفظ الـ Refresh Token في Redis
+    redis.set(
+      `refreshToken:${req.user._id}`,
+      refreshToken,
+      "EX",
+      30 * 24 * 60 * 60
+    );
+
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "None",
+      maxAge: 30 * 24 * 60 * 60 * 1000,
+    });
+
+    res
+      .status(200)
+      .json({ accessToken, message: "✅ Logged in with Google successfully!" });
+  }
+);
 export default router;

@@ -18,8 +18,6 @@ import TokenBlacklist from "../models/TokenBlacklist.js";
 import { verifyCaptcha } from "../utils/captchaUtils.js";
 import redis from "../config/redisClient.js";
 import axios from "axios";
-import { OAuth2Client } from "google-auth-library";
-
 dotenv.config();
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -53,65 +51,6 @@ export const signup = async (req, res) => {
     });
   } catch (err) {
     res.status(400).json({ message: err.message });
-  }
-};
-const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
-const client = new OAuth2Client(GOOGLE_CLIENT_ID);
-
-export const googleAuth = async (req, res) => {
-  const { idToken } = req.body;
-
-  try {
-    const ticket = await client.verifyIdToken({
-      idToken: idToken,
-      audience: GOOGLE_CLIENT_ID,
-    });
-    const payload = ticket.getPayload();
-    const { email, given_name, family_name, sub: googleId } = payload;
-
-    let user = await User.findOne({ email });
-    if (!user) {
-      user = new User({
-        firstName: given_name || "User",
-        lastName: family_name || "",
-        email,
-        password: await hashPassword(crypto.randomBytes(16).toString("hex")),
-        isVerified: true,
-        googleId,
-      });
-      await user.save();
-      console.log(`✅ Created new user with Google ID: ${googleId}`);
-    } else if (!user.googleId) {
-      user.googleId = googleId;
-      await user.save();
-    }
-
-    const accessToken = generateAccessToken(user._id);
-    const refreshToken = generateRefreshToken(user._id);
-
-    await redis.set(
-      `refreshToken:${user._id}`,
-      refreshToken,
-      "EX",
-      30 * 24 * 60 * 60
-    );
-
-    res.cookie("refreshToken", refreshToken, {
-      httpOnly: true,
-      secure: true,
-      sameSite: "None",
-      maxAge: 30 * 24 * 60 * 60 * 1000,
-    });
-
-    res.status(200).json({
-      message: "✅ Successfully authenticated with Google",
-      accessToken,
-    });
-  } catch (error) {
-    console.error("❌ Google Auth Error:", error);
-    res
-      .status(400)
-      .json({ message: "❌ Invalid Google token or server error" });
   }
 };
 export const login = async (req, res) => {
