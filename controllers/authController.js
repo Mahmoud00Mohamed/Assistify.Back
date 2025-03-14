@@ -13,6 +13,8 @@ import dotenv from "dotenv";
 import jwt from "jsonwebtoken";
 import { verifyCaptcha } from "../utils/captchaUtils.js";
 import redis from "../config/redisClient.js";
+import passport from "../config/passport.js"; // استيراد Passport
+
 dotenv.config();
 
 export const signup = async (req, res) => {
@@ -42,6 +44,41 @@ export const signup = async (req, res) => {
     });
   } catch (err) {
     res.status(400).json({ message: err.message });
+  }
+}; // تسجيل الدخول عبر Google
+export const googleAuth = passport.authenticate("google", {
+  scope: ["profile", "email"], // نطاق البيانات المطلوبة من Google
+});
+
+// رد الاتصال بعد تسجيل الدخول عبر Google
+export const googleAuthCallback = async (req, res) => {
+  try {
+    const user = req.user;
+    const accessToken = generateAccessToken(user._id);
+    const refreshToken = generateRefreshToken(user._id);
+
+    // تخزين Refresh Token في Redis
+    await redis.set(
+      `refreshToken:${user._id}`,
+      refreshToken,
+      "EX",
+      30 * 24 * 60 * 60
+    );
+
+    // تعيين ملف تعريف الارتباط
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "None",
+      maxAge: 30 * 24 * 60 * 60 * 1000,
+    });
+
+    // إعادة توجيه المستخدم إلى الواجهة الأمامية مع الـ Access Token
+    res.redirect(
+      `${process.env.FRONTEND_URL}/auth/success?token=${accessToken}`
+    );
+  } catch (err) {
+    res.status(500).json({ message: "❌ Internal server error." });
   }
 };
 export const login = async (req, res) => {

@@ -12,6 +12,11 @@ import {
   logout,
   checkUsername,
 } from "../controllers/authController.js";
+import passport from "../config/passport.js";
+import {
+  googleAuth,
+  googleAuthCallback,
+} from "../controllers/authController.js";
 
 const router = express.Router();
 
@@ -35,5 +40,11 @@ router.get("/check-username", checkUsername);
 router.post("/reset-password", resetPassword);
 router.post("/refresh-token", refreshAccessToken);
 router.post("/logout", logout);
+router.get("/auth/google", googleAuth);
+router.get(
+  "/auth/google/callback",
+  passport.authenticate("google", { session: false }),
+  googleAuthCallback
+);
 
 export default router;

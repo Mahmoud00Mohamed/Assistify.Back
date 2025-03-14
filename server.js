@@ -12,6 +12,7 @@ import userRoutes from "./routes/userRoutes.js";
 import taskRoutes from "./routes/taskRoutes.js";
 import projectRoutes from "./routes/projectRoutes.js";
 import path from "path";
+import passport from "./config/passport.js";
 
 dotenv.config();
 
@@ -81,6 +82,7 @@ app.use(express.json());
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.use(express.static("public"));
 
+app.use(passport.initialize()); // تهيئة Passport
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api", taskRoutes);
