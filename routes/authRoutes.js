@@ -37,25 +37,37 @@ router.post("/reset-password", resetPassword);
 router.post("/refresh-token", refreshAccessToken);
 router.post("/logout", logout);
 
-router.get(
-  "/google",
-  passport.authenticate("google", { scope: ["profile", "email"] })
-);
+router.post("/google", async (req, res) => {
+  const { token } = req.body;
 
-router.get(
-  "/google/callback",
-  passport.authenticate("google", { failureRedirect: "/login" }),
-  (req, res) => {
-    const accessToken = generateAccessToken(req.user._id);
-    const refreshToken = generateRefreshToken(req.user._id);
+  if (!token) {
+    return res.status(400).json({ message: "No token provided." });
+  }
 
-    // حفظ الـ Refresh Token في Redis
-    redis.set(
-      `refreshToken:${req.user._id}`,
-      refreshToken,
-      "EX",
-      30 * 24 * 60 * 60
-    );
+  try {
+    // التحقق من رمز Google Identity Token باستخدام مكتبة google-auth-library
+    const { OAuth2Client } = require("google-auth-library");
+    const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+    const ticket = await client.verifyIdToken({
+      idToken: token,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+    const payload = ticket.getPayload();
+
+    // البحث عن المستخدم أو إنشاؤه
+    let user = await User.findOne({ email: payload.email });
+    if (!user) {
+      user = new User({
+        firstName: payload.given_name,
+        lastName: payload.family_name || "",
+        email: payload.email,
+        isVerified: true,
+      });
+      await user.save();
+    }
+
+    const accessToken = generateAccessToken(user._id);
+    const refreshToken = generateRefreshToken(user._id);
 
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
@@ -64,9 +76,10 @@ router.get(
       maxAge: 30 * 24 * 60 * 60 * 1000,
     });
 
-    res
-      .status(200)
-      .json({ accessToken, message: "✅ Logged in with Google successfully!" });
+    res.status(200).json({ accessToken, success: true });
+  } catch (error) {
+    console.error("Google token verification failed:", error);
+    res.status(401).json({ message: "Invalid Google token." });
   }
-);
+});
 export default router;
