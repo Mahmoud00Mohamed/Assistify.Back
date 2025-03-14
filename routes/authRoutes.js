@@ -11,9 +11,6 @@ import {
   refreshAccessToken,
   logout,
   checkUsername,
-} from "../controllers/authController.js";
-import passport from "../config/passport.js";
-import {
   googleAuth,
   googleAuthCallback,
 } from "../controllers/authController.js";
@@ -36,15 +33,12 @@ router.post("/verify-email", authLimiter, verifyEmail);
 router.post("/resend-code", authLimiter, resendCode);
 router.get("/check-username", checkUsername);
 
+router.get("/google", googleAuth);
+router.get("/google/callback", googleAuthCallback);
+
 // باقي المسارات بدون Rate Limiting
 router.post("/reset-password", resetPassword);
 router.post("/refresh-token", refreshAccessToken);
 router.post("/logout", logout);
-router.get("/auth/google", googleAuth);
-router.get(
-  "/auth/google/callback",
-  passport.authenticate("google", { session: false }),
-  googleAuthCallback
-);
 
 export default router;
