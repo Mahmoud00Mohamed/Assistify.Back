@@ -5,9 +5,6 @@ import path from "path";
 import { fileURLToPath } from "url";
 import dotenv from "dotenv";
 import argon2 from "argon2";
-import passport from "passport";
-import { Strategy as GoogleStrategy } from "passport-google-oauth20";
-import User from "../models/User.js";
 
 dotenv.config();
 
@@ -23,44 +20,6 @@ export const publicKey = fs.readFileSync(
   "utf8"
 );
 
-passport.use(
-  new GoogleStrategy(
-    {
-      clientID: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: `${process.env.BACKEND_URL}/auth/google/callback`,
-    },
-    async (accessToken, refreshToken, profile, done) => {
-      try {
-        let user = await User.findOne({ email: profile.emails[0].value });
-
-        if (!user) {
-          // 👤 إنشاء مستخدم جديد إذا لم يكن موجودًا
-          user = new User({
-            firstName: profile.name.givenName,
-            lastName: profile.name.familyName || "",
-            email: profile.emails[0].value,
-            isVerified: true,
-          });
-          await user.save();
-        }
-
-        done(null, user);
-      } catch (err) {
-        done(err, null);
-      }
-    }
-  )
-);
-
-passport.serializeUser((user, done) => {
-  done(null, user.id);
-});
-
-passport.deserializeUser(async (id, done) => {
-  const user = await User.findById(id);
-  done(null, user);
-});
 /**
  * توليد Access Token صالح لـ 30 دقائق
  */
@@ -101,5 +60,3 @@ export const hashPassword = async (password) => {
 export const verifyPassword = async (password, hashedPassword) => {
   return await argon2.verify(hashedPassword, password);
 };
-
-export default passport;

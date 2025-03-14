@@ -1,7 +1,6 @@
 // controllers/userController.js
 
 import User from "../models/User.js";
-import { generateAccessToken } from "../config/auth.js";
 import argon2 from "argon2";
 import sendEmail from "../utils/sendEmail.js";
 import fs from "fs";

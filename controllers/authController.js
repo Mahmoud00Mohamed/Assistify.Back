@@ -3,27 +3,18 @@ import User from "../models/User.js";
 import {
   generateAccessToken,
   generateRefreshToken,
-  verifyToken,
   hashPassword,
   verifyPassword,
   publicKey,
 } from "../config/auth.js";
-import { addToBlacklist } from "../utils/tokenUtils.js";
 import sendEmail from "../utils/sendEmail.js";
-import rateLimit from "express-rate-limit";
 import crypto from "crypto";
 import dotenv from "dotenv";
 import jwt from "jsonwebtoken";
-import TokenBlacklist from "../models/TokenBlacklist.js";
 import { verifyCaptcha } from "../utils/captchaUtils.js";
 import redis from "../config/redisClient.js";
-import axios from "axios";
 dotenv.config();
-const loginLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 500,
-  message: "🚫 Attempt limit exceeded. Please try again later.",
-});
+
 export const signup = async (req, res) => {
   const { firstName, lastName, email, password, captchaToken } = req.body;
   if (!(await verifyCaptcha(captchaToken))) {
