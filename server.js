@@ -51,7 +51,7 @@ app.use(
 // إعداد CORS
 const allowedOrigins = [
   "https://192.168.1.3:3001", // تم تصحيح العنوان
-  "https://localhost:3001 ",
+  "https://localhost:3001",
 ];
 app.use(
   cors({
