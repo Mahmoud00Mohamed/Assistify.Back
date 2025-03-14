@@ -55,70 +55,63 @@ export const signup = async (req, res) => {
     res.status(400).json({ message: err.message });
   }
 };
-const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+const client = new OAuth2Client(GOOGLE_CLIENT_ID);
 
-export const googleSignup = async (req, res) => {
-  const { token } = req.body;
+export const googleAuth = async (req, res) => {
+  const { idToken } = req.body;
 
   try {
-    // التحقق من رمز Google
     const ticket = await client.verifyIdToken({
-      idToken: token,
-      audience: process.env.GOOGLE_CLIENT_ID, // تأكد من أن هذا يتطابق مع Client ID في الـ Frontend
+      idToken: idToken,
+      audience: GOOGLE_CLIENT_ID,
     });
-
     const payload = ticket.getPayload();
-    const { email, given_name: firstName, family_name: lastName } = payload;
+    const { email, given_name, family_name, sub: googleId } = payload;
 
-    // التحقق مما إذا كان المستخدم موجودًا بالفعل
     let user = await User.findOne({ email });
-
     if (!user) {
-      // إذا لم يكن المستخدم موجودًا، إنشاء حساب جديد
       user = new User({
-        firstName,
-        lastName: lastName || "", // بعض حسابات Google قد لا تحتوي على اسم عائلة
+        firstName: given_name || "User",
+        lastName: family_name || "",
         email,
-        password: await hashPassword(crypto.randomBytes(16).toString("hex")), // كلمة مرور عشوائية لأننا لا نحتاجها مع Google
-        isVerified: true, // حسابات Google موثوقة افتراضيًا
+        password: await hashPassword(crypto.randomBytes(16).toString("hex")),
+        isVerified: true,
+        googleId,
       });
+      await user.save();
+      console.log(`✅ Created new user with Google ID: ${googleId}`);
+    } else if (!user.googleId) {
+      user.googleId = googleId;
       await user.save();
     }
 
-    // إصدار التوكنات
     const accessToken = generateAccessToken(user._id);
     const refreshToken = generateRefreshToken(user._id);
 
-    // حفظ refreshToken في Redis
     await redis.set(
       `refreshToken:${user._id}`,
       refreshToken,
       "EX",
-      30 * 24 * 60 * 60 // 30 يومًا
+      30 * 24 * 60 * 60
     );
 
-    // إعداد الكوكيز
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
       secure: true,
       sameSite: "None",
-      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 يومًا
+      maxAge: 30 * 24 * 60 * 60 * 1000,
     });
 
-    // إرجاع الاستجابة
     res.status(200).json({
-      success: true,
-      message: user.isVerified
-        ? "✅ Signed in successfully with Google."
-        : "📩 Account created. Please check your email to verify.",
+      message: "✅ Successfully authenticated with Google",
       accessToken,
     });
-  } catch (err) {
-    console.error("Google signup error:", err);
-    res.status(400).json({
-      success: false,
-      message: "❌ Failed to sign up with Google. Please try again.",
-    });
+  } catch (error) {
+    console.error("❌ Google Auth Error:", error);
+    res
+      .status(400)
+      .json({ message: "❌ Invalid Google token or server error" });
   }
 };
 export const login = async (req, res) => {

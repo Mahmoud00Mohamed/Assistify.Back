@@ -11,7 +11,7 @@ import {
   refreshAccessToken,
   logout,
   checkUsername,
-  googleSignup,
+  googleAuth, // أضف هذا
 } from "../controllers/authController.js";
 
 const router = express.Router();
@@ -31,10 +31,10 @@ router.post("/password-reset", authLimiter, requestPasswordReset);
 router.post("/verify-email", authLimiter, verifyEmail);
 router.post("/resend-code", authLimiter, resendCode);
 router.get("/check-username", checkUsername);
-router.post("/google-signup", googleSignup);
+
 // باقي المسارات بدون Rate Limiting
 router.post("/reset-password", resetPassword);
 router.post("/refresh-token", refreshAccessToken);
 router.post("/logout", logout);
-
+router.post("/google", authLimiter, googleAuth);
 export default router;

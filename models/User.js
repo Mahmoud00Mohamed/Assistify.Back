@@ -40,6 +40,8 @@ const UserSchema = new mongoose.Schema(
     // ✅ الحقول الجديدة لإدارة تأخير طلبات تغيير البريد الإلكتروني
     emailRequestAttempts: { type: Number, default: 0 }, // عدد المحاولات
     lastEmailRequestTime: { type: Date }, // آخر وقت لطلب تغيير البريد
+    // حقل جديد لـ Google
+    googleId: { type: String, unique: true, sparse: true }, // معرف Google الفريد
   },
   { timestamps: true }
 );
