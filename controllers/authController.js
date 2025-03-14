@@ -13,6 +13,8 @@ import dotenv from "dotenv";
 import jwt from "jsonwebtoken";
 import { verifyCaptcha } from "../utils/captchaUtils.js";
 import redis from "../config/redisClient.js";
+import passport from "passport";
+
 dotenv.config();
 
 export const signup = async (req, res) => {
@@ -276,4 +278,45 @@ export const checkUsername = async (req, res) => {
       message: `❌ ${error.message || "Internal server error."}`,
     });
   }
+};
+
+/**
+ * توجيه المستخدم إلى تسجيل الدخول عبر جوجل
+ */
+export const googleAuth = passport.authenticate("google", {
+  scope: ["profile", "email"],
+});
+
+/**
+ * استقبال بيانات المستخدم بعد تسجيل الدخول بجوجل
+ */
+export const googleAuthCallback = (req, res, next) => {
+  passport.authenticate("google", async (err, user) => {
+    if (err || !user) {
+      return res.redirect(
+        `${process.env.FRONTEND_URL}/login?error=google_auth_failed`
+      );
+    }
+
+    const accessToken = generateAccessToken(user._id);
+    const refreshToken = generateRefreshToken(user._id);
+
+    await redis.set(
+      `refreshToken:${user._id}`,
+      refreshToken,
+      "EX",
+      30 * 24 * 60 * 60
+    );
+
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "None",
+      maxAge: 30 * 24 * 60 * 60 * 1000,
+    });
+
+    return res.redirect(
+      `${process.env.FRONTEND_URL}/dashboard?token=${accessToken}`
+    );
+  })(req, res, next);
 };

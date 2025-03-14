@@ -12,7 +12,8 @@ import userRoutes from "./routes/userRoutes.js";
 import taskRoutes from "./routes/taskRoutes.js";
 import projectRoutes from "./routes/projectRoutes.js";
 import path from "path";
-import passport from "./config/auth.js";
+import passport from "./config/passport.js";
+import session from "express-session";
 
 dotenv.config();
 
@@ -29,7 +30,7 @@ connectDB();
 
 // دعم الكوكيز
 app.use(cookieParser());
-app.use(passport.initialize()); // تهيئة Passport
+
 // تطبيق Helmet لتحسين الأمان
 app.use(
   helmet({
@@ -48,7 +49,13 @@ app.use(
     crossOriginResourcePolicy: false,
   })
 );
-
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET || "your_secret_key",
+    resave: false,
+    saveUninitialized: false,
+  })
+);
 // إعداد CORS
 const allowedOrigins = [
   "https://192.168.1.3:3001", // تم تصحيح العنوان
@@ -81,7 +88,8 @@ app.use(limiter);
 app.use(express.json());
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.use(express.static("public"));
-
+app.use(passport.initialize());
+app.use(passport.session());
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api", taskRoutes);
