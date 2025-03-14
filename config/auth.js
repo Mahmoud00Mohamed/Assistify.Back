@@ -8,56 +8,8 @@ import argon2 from "argon2";
 import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import User from "../models/User.js";
-import redis from "../config/redisClient.js";
 
 dotenv.config();
-
-passport.use(
-  new GoogleStrategy(
-    {
-      clientID: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: process.env.GOOGLE_REDIRECT_URI,
-    },
-    async (accessToken, refreshToken, profile, done) => {
-      try {
-        let user = await User.findOne({ email: profile.emails[0].value });
-
-        if (!user) {
-          user = new User({
-            firstName: profile.name.givenName,
-            lastName: profile.name.familyName || "",
-            email: profile.emails[0].value,
-            isVerified: true, // ✅ المستخدم موثوق لأنه سجل باستخدام Google
-          });
-          await user.save();
-        }
-
-        const accessToken = generateAccessToken(user._id);
-        const refreshToken = generateRefreshToken(user._id);
-
-        await redis.set(
-          `refreshToken:${user._id}`,
-          refreshToken,
-          "EX",
-          30 * 24 * 60 * 60
-        );
-
-        return done(null, { user, accessToken, refreshToken });
-      } catch (err) {
-        return done(err, null);
-      }
-    }
-  )
-);
-
-passport.serializeUser((user, done) => {
-  done(null, user);
-});
-
-passport.deserializeUser((user, done) => {
-  done(null, user);
-});
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -71,9 +23,55 @@ export const publicKey = fs.readFileSync(
   "utf8"
 );
 
-/**
- * توليد Access Token صالح لـ 30 دقائق
- */
+// إعداد استراتيجية Google OAuth
+passport.use(
+  new GoogleStrategy(
+    {
+      clientID: process.env.GOOGLE_CLIENT_ID, // أضف Client ID في .env
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET, // أضف Client Secret في .env
+      callbackURL: `${process.env.BACKEND_URL}/auth/google/callback`, // URL رد الاتصال
+    },
+    async (accessToken, refreshToken, profile, done) => {
+      try {
+        // البحث عن المستخدم باستخدام البريد الإلكتروني
+        let user = await User.findOne({ email: profile.emails[0].value });
+
+        if (!user) {
+          // إذا لم يكن موجودًا، أنشئ مستخدمًا جديدًا
+          user = new User({
+            firstName: profile.name.givenName,
+            lastName: profile.name.familyName,
+            email: profile.emails[0].value,
+            password: await hashPassword(
+              crypto.randomBytes(16).toString("hex")
+            ), // كلمة مرور عشوائية
+            isVerified: true, // التحقق تلقائيًا لأن Google يثبت البريد
+          });
+          await user.save();
+        }
+
+        return done(null, user);
+      } catch (err) {
+        return done(err, null);
+      }
+    }
+  )
+);
+
+// تسلسل/فك تسلسل المستخدم لـ Passport
+passport.serializeUser((user, done) => {
+  done(null, user._id);
+});
+
+passport.deserializeUser(async (id, done) => {
+  try {
+    const user = await User.findById(id);
+    done(null, user);
+  } catch (err) {
+    done(err, null);
+  }
+});
+
 export const generateAccessToken = (userId) => {
   return jwt.sign({ userId }, privateKey, {
     algorithm: "RS256",
@@ -81,9 +79,6 @@ export const generateAccessToken = (userId) => {
   });
 };
 
-/**
- * توليد Refresh Token صالح لـ 24 ساعة
- */
 export const generateRefreshToken = (userId) => {
   return jwt.sign({ userId }, privateKey, {
     algorithm: "RS256",
@@ -91,24 +86,16 @@ export const generateRefreshToken = (userId) => {
   });
 };
 
-/**
- * التحقق من صحة التوكن
- */
 export const verifyToken = (token) => {
   return jwt.verify(token, publicKey, { algorithms: ["RS256"] });
 };
 
-/**
- * تشفير كلمة المرور باستخدام Argon2
- */
 export const hashPassword = async (password) => {
   return await argon2.hash(password);
 };
 
-/**
- * التحقق من كلمة المرور
- */
 export const verifyPassword = async (password, hashedPassword) => {
   return await argon2.verify(hashedPassword, password);
 };
-export default passport;
+
+export default passport; // تصدير Passport لاستخدامه في ملفات أخرى

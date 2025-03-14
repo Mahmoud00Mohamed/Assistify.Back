@@ -13,8 +13,6 @@ import dotenv from "dotenv";
 import jwt from "jsonwebtoken";
 import { verifyCaptcha } from "../utils/captchaUtils.js";
 import redis from "../config/redisClient.js";
-import passport from "passport";
-
 dotenv.config();
 
 export const signup = async (req, res) => {
@@ -45,30 +43,6 @@ export const signup = async (req, res) => {
   } catch (err) {
     res.status(400).json({ message: err.message });
   }
-};
-export const googleAuth = passport.authenticate("google", {
-  scope: ["profile", "email"],
-});
-
-export const googleAuthCallback = (req, res, next) => {
-  passport.authenticate("google", { session: false }, (err, data) => {
-    if (err || !data) {
-      return res
-        .status(400)
-        .json({ message: "❌ Google Authentication Failed" });
-    }
-
-    res.cookie("refreshToken", data.refreshToken, {
-      httpOnly: true,
-      secure: true,
-      sameSite: "None",
-      maxAge: 30 * 24 * 60 * 60 * 1000,
-    });
-
-    res.redirect(
-      `${process.env.FRONTEND_URL}/dashboard?token=${data.accessToken}`
-    );
-  })(req, res, next);
 };
 export const login = async (req, res) => {
   const { email, password, captchaToken } = req.body;

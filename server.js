@@ -12,6 +12,7 @@ import userRoutes from "./routes/userRoutes.js";
 import taskRoutes from "./routes/taskRoutes.js";
 import projectRoutes from "./routes/projectRoutes.js";
 import path from "path";
+import passport from "./config/auth.js";
 
 dotenv.config();
 
@@ -28,7 +29,7 @@ connectDB();
 
 // دعم الكوكيز
 app.use(cookieParser());
-
+app.use(passport.initialize()); // تهيئة Passport
 // تطبيق Helmet لتحسين الأمان
 app.use(
   helmet({

@@ -11,32 +11,56 @@ import {
   refreshAccessToken,
   logout,
   checkUsername,
-  googleAuth,
-  googleAuthCallback,
 } from "../controllers/authController.js";
+import passport from "../config/auth.js";
 
 const router = express.Router();
 
-// إعداد معدل التحديد للمسارات الحساسة (5 محاولات خلال 15 دقيقة)
 const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 دقيقة
-  max: 5000, // عدد المحاولات القصوى
+  windowMs: 15 * 60 * 1000,
+  max: 5000,
   message: { error: "Too many requests. Please try again later." },
   standardHeaders: true,
   legacyHeaders: false,
 });
-// تطبيق الـ Rate Limiting على المسارات الحساسة
+
+// مسار بدء تسجيل الدخول باستخدام Google
+router.get(
+  "/google",
+  passport.authenticate("google", { scope: ["profile", "email"] })
+);
+
+// مسار رد الاتصال من Google
+router.get(
+  "/google/callback",
+  passport.authenticate("google", {
+    session: false,
+    failureRedirect: "/login",
+  }),
+  (req, res) => {
+    // بعد النجاح، يتم إنشاء التوكنات وإعادة توجيه المستخدم
+    const accessToken = generateAccessToken(req.user._id);
+    const refreshToken = generateRefreshToken(req.user._id);
+
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "None",
+      maxAge: 30 * 24 * 60 * 60 * 1000,
+    });
+
+    // إعادة توجيه إلى الواجهة الأمامية مع التوكن
+    res.redirect(`${process.env.FRONTEND_URL}/auth?token=${accessToken}`);
+  }
+);
+
+// المسارات الأخرى
 router.post("/signup", authLimiter, signup);
 router.post("/login", authLimiter, login);
 router.post("/password-reset", authLimiter, requestPasswordReset);
 router.post("/verify-email", authLimiter, verifyEmail);
 router.post("/resend-code", authLimiter, resendCode);
 router.get("/check-username", checkUsername);
-
-router.get("/google", googleAuth);
-router.get("/google/callback", googleAuthCallback);
-
-// باقي المسارات بدون Rate Limiting
 router.post("/reset-password", resetPassword);
 router.post("/refresh-token", refreshAccessToken);
 router.post("/logout", logout);
