@@ -7,6 +7,7 @@ import Project from "./Project.js";
 // 🛡️ تعريف مخطط المستخدم
 const UserSchema = new mongoose.Schema(
   {
+    googleId: { type: String, unique: true, sparse: true },
     firstName: {
       type: String,
       required: true,
@@ -37,7 +38,7 @@ const UserSchema = new mongoose.Schema(
     newEmail: { type: String, unique: true, sparse: true },
     emailVerificationCode: { type: String },
     refreshToken: { type: String },
-    // ✅ الحقول الجديدة لإدارة تأخير طلبات تغيير البريد الإلكتروني
+    //  الحقول الجديدة لإدارة تأخير طلبات تغيير البريد الإلكتروني
     emailRequestAttempts: { type: Number, default: 0 }, // عدد المحاولات
     lastEmailRequestTime: { type: Date }, // آخر وقت لطلب تغيير البريد
   },
@@ -46,25 +47,25 @@ const UserSchema = new mongoose.Schema(
 // 🛡️ Validate username
 UserSchema.statics.isValidUsername = async function (username, userId = null) {
   if (username.length < 6)
-    throw new Error("❌ Username must be at least 6 characters long.");
+    throw new Error(" Username must be at least 6 characters long.");
   if (username.length > 30)
-    throw new Error("❌ Username must be 30 characters or fewer.");
+    throw new Error(" Username must be 30 characters or fewer.");
   if (/\s/.test(username))
-    throw new Error("❌ Spaces are not allowed in the username.");
+    throw new Error(" Spaces are not allowed in the username.");
   if (!/^[a-zA-Z0-9._-]+$/.test(username))
     throw new Error(
-      "❌ Only English letters, numbers, dots (.), and hyphens (-, _) are allowed."
+      " Only English letters, numbers, dots (.), and hyphens (-, _) are allowed."
     );
   if (!/[a-zA-Z]/.test(username))
-    throw new Error("❌ Username must contain at least two English letters.");
+    throw new Error(" Username must contain at least two English letters.");
 
   // Prevent non-English characters (including Arabic)
   if (/[^a-zA-Z0-9._-]/.test(username))
-    throw new Error("❌ Only English letters are allowed.");
+    throw new Error(" Only English letters are allowed.");
 
   const existingUser = await this.findOne({ username });
   if (existingUser && (!userId || existingUser._id.toString() !== userId)) {
-    throw new Error("❌ Username is already taken.");
+    throw new Error(" Username is already taken.");
   }
 
   return true;
@@ -151,7 +152,7 @@ UserSchema.pre("save", async function (next) {
   }
 
   next();
-}); // ✅ حذف جميع المهام والمشاريع المرتبطة قبل حذف المستخدم
+}); //  حذف جميع المهام والمشاريع المرتبطة قبل حذف المستخدم
 UserSchema.pre(
   "deleteOne",
   { document: true, query: false },

@@ -5,7 +5,7 @@ const RECAPTCHA_SECRET_KEY = process.env.RECAPTCHA_SECRET_KEY; // مفتاحك �
 const RECAPTCHA_VERIFY_URL = "https://www.google.com/recaptcha/api/siteverify";
 
 /**
- * ✅ التحقق من صحة كود CAPTCHA
+ *  التحقق من صحة كود CAPTCHA
  * @param {string} captchaToken - رمز التحقق من المستخدم
  * @returns {Promise<boolean>} - إرجاع true إذا كان التحقق ناجحًا، وإلا false
  */
@@ -21,7 +21,7 @@ export const verifyCaptcha = async (captchaToken) => {
     const { success } = response.data;
     return Boolean(success); // يضمن أن القيمة المرجعة دائمًا true أو false
   } catch (error) {
-    console.error("❌ خطأ في التحقق من CAPTCHA:", error.message);
+    
     return false;
   }
 };

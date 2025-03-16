@@ -8,16 +8,13 @@ const connectDB = async () => {
   try {
     await mongoose.connect(process.env.MONGO_URI, {
       serverSelectionTimeoutMS: 10000,
-      autoIndex: process.env.NODE_ENV !== "production",
+      autoIndex: process.env.NODE_ENV,
       family: 4,
-      tls: true, // ✅ تفعيل TLS لـ Atlas
+      tls: true, //  تفعيل TLS لـ Atlas
       retryWrites: true,
       w: "majority",
     });
-
-    console.log("✅ MongoDB connected successfully");
   } catch (err) {
-    console.error("❌ MongoDB connection error:", err.message);
     setTimeout(connectDB, 5000);
   }
 };

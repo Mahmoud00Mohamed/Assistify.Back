@@ -1,7 +1,10 @@
+// config/passport.js
 import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import User from "../models/User.js";
 import dotenv from "dotenv";
+import { hashPassword } from "./auth.js";
+import crypto from "crypto"; // إضافة استيراد crypto
 
 dotenv.config();
 
@@ -10,45 +13,46 @@ passport.use(
     {
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL:
-        "https://assistify-back.onrender.com/api/auth/google/callback",
-      passReqToCallback: true,
+      callbackURL: "http://localhost:3002/api/auth/google/callback",
     },
-    async (req, accessToken, refreshToken, profile, done) => {
+    async (accessToken, refreshToken, profile, done) => {
       try {
         let user = await User.findOne({ email: profile.emails[0].value });
 
         if (!user) {
           user = new User({
-            firstName: profile.name.givenName,
-            lastName: profile.name.familyName || "",
+            firstName: profile.name.givenName || "User",
+            lastName: profile.name.familyName || "Google",
             email: profile.emails[0].value,
+            password: await hashPassword(
+              crypto.randomBytes(16).toString("hex")
+            ),
             isVerified: true,
-            profilePicture: profile.photos[0]?.value || "",
+            googleId: profile.id,
           });
           await user.save();
         }
 
         return done(null, user);
-      } catch (error) {
-        return done(error, null);
+      } catch (err) {
+        return done(err, null);
       }
     }
   )
 );
 
-// تخزين بيانات المستخدم في الجلسة
+// تحويل كائن المستخدم إلى معرف فقط في الجلسة
 passport.serializeUser((user, done) => {
-  done(null, user.id);
+  done(null, user._id);
 });
 
-// استعادة بيانات المستخدم من الجلسة
+// استرجاع المستخدم من المعرف
 passport.deserializeUser(async (id, done) => {
   try {
     const user = await User.findById(id);
     done(null, user);
-  } catch (error) {
-    done(error, null);
+  } catch (err) {
+    done(err, null);
   }
 });
 

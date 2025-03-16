@@ -106,7 +106,7 @@ export const updatePassword = async (req, res) => {
     await user.save();
     res.status(200).json({ message: "Password updated successfully." });
   } catch (err) {
-    console.error("❌ Error updating password:", err);
+    
     res.status(500).json({
       error:
         "An unexpected error occurred while updating the password. Please try again later.",
@@ -201,17 +201,17 @@ export const deleteUser = async (req, res) => {
     if (confirmation !== "DELETE") {
       return res
         .status(400)
-        .json({ message: "❌ You must type 'DELETE' to confirm." });
+        .json({ message: " You must type 'DELETE' to confirm." });
     }
 
     const user = await User.findById(userId);
     if (!user) {
-      return res.status(404).json({ message: "❌ User not found." });
+      return res.status(404).json({ message: " User not found." });
     }
 
     const isPasswordValid = await argon2.verify(user.password, password);
     if (!isPasswordValid) {
-      return res.status(401).json({ message: "❌ Incorrect password." });
+      return res.status(401).json({ message: " Incorrect password." });
     }
 
     // 🗑️ حذف جميع البيانات المرتبطة بالمستخدم
@@ -250,12 +250,12 @@ export const deleteUser = async (req, res) => {
 
     res.json({
       message:
-        "✅ Account and all associated data have been successfully deleted.",
+        " Account and all associated data have been successfully deleted.",
     });
   } catch (error) {
-    console.error("🚨 Error while deleting account:", error);
+    
     res
       .status(500)
-      .json({ message: "❌ An error occurred while deleting the account." });
+      .json({ message: " An error occurred while deleting the account." });
   }
 };

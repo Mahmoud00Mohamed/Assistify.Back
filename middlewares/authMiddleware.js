@@ -29,7 +29,7 @@ const detectSuspiciousActivity = (req) => {
   if (
     blockedUserAgents.some((agent) => userAgent.toLowerCase().includes(agent))
   ) {
-    console.warn(`🛑 نشاط مشبوه - User-Agent: ${userAgent}, IP: ${clientIP}`);
+    
     return true;
   }
 
@@ -45,7 +45,7 @@ const authMiddleware = async (req, res, next) => {
     if (!token) {
       return res
         .status(401)
-        .json({ message: "❌ No token provided, access denied." });
+        .json({ message: " No token provided, access denied." });
     }
 
     // 🔍 Detect suspicious activity
@@ -60,26 +60,26 @@ const authMiddleware = async (req, res, next) => {
     if (isBlacklisted) {
       return res
         .status(401)
-        .json({ message: "❌ Token is invalid (blacklisted)." });
+        .json({ message: " Token is invalid (blacklisted)." });
     }
 
-    // ✅ Verify token validity
+    //  Verify token validity
     const decoded = verifyToken(token);
     if (!decoded) {
       return res
         .status(401)
-        .json({ message: "❌ Token is invalid or expired." });
+        .json({ message: " Token is invalid or expired." });
     }
 
-    // ✅ Pass user data to the request
+    //  Pass user data to the request
     req.user = decoded;
     next();
   } catch (err) {
-    console.error("❌ [Middleware] Error verifying token:", err.message);
-    return res.status(401).json({ message: "❌ Token is invalid or expired." });
+    
+    return res.status(401).json({ message: " Token is invalid or expired." });
   }
 };
 
-// ✅ تصدير الميدل وير
+//  تصدير الميدل وير
 export default authMiddleware;
 export { requestLimiter };

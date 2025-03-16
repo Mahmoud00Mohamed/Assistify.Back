@@ -9,7 +9,7 @@ export const createTask = async (req, res) => {
     if (!name?.trim() || name.trim().length < 3) {
       return res
         .status(400)
-        .json({ message: "❌ Task name is required (at least 3 characters)." });
+        .json({ message: " Task name is required (at least 3 characters)." });
     }
 
     // Check for an existing task with the same name
@@ -23,7 +23,7 @@ export const createTask = async (req, res) => {
     // Validate the due date
     const parsedDueDate = dueDate ? new Date(dueDate) : undefined;
     if (parsedDueDate && isNaN(parsedDueDate.getTime())) {
-      return res.status(400).json({ message: "❌ Invalid due date." });
+      return res.status(400).json({ message: " Invalid due date." });
     }
 
     const today = new Date();
@@ -56,12 +56,12 @@ export const createTask = async (req, res) => {
     });
 
     await task.save();
-    res.status(201).json({ message: "✅ Task added successfully.", task });
+    res.status(201).json({ message: " Task added successfully.", task });
   } catch (error) {
-    console.error("❌ Error while creating the task:", error.message);
+    
     res
       .status(500)
-      .json({ message: "❌ An error occurred while creating the task." });
+      .json({ message: " An error occurred while creating the task." });
   }
 };
 
@@ -101,10 +101,10 @@ export const getUserTasks = async (req, res) => {
       tasks,
     });
   } catch (error) {
-    console.error("❌ Error while fetching tasks:", error.message);
+    
     res
       .status(500)
-      .json({ message: "❌ An error occurred while fetching tasks." });
+      .json({ message: " An error occurred while fetching tasks." });
   }
 };
 export const updateTask = async (req, res) => {
@@ -123,7 +123,7 @@ export const updateTask = async (req, res) => {
 
     // Validate the task ID
     if (!taskId.match(/^[0-9a-fA-F]{24}$/)) {
-      return res.status(400).json({ message: "❌ Invalid task ID." });
+      return res.status(400).json({ message: " Invalid task ID." });
     }
 
     // Find the task
@@ -146,14 +146,14 @@ export const updateTask = async (req, res) => {
     if (progress !== undefined && (progress < 0 || progress > 100)) {
       return res
         .status(400)
-        .json({ message: "❌ Progress percentage must be between 0 and 100." });
+        .json({ message: " Progress percentage must be between 0 and 100." });
     }
 
     // Validate due date
     if (dueDate) {
       const parsedDueDate = new Date(dueDate);
       if (isNaN(parsedDueDate.getTime())) {
-        return res.status(400).json({ message: "❌ Invalid due date." });
+        return res.status(400).json({ message: " Invalid due date." });
       }
 
       const today = new Date();
@@ -201,12 +201,12 @@ export const updateTask = async (req, res) => {
     if (completed !== undefined) task.completed = completed;
 
     await task.save();
-    res.status(200).json({ message: "✅ Task updated successfully.", task });
+    res.status(200).json({ message: " Task updated successfully.", task });
   } catch (error) {
-    console.error("❌ Error while updating the task:", error.message);
+    
     res
       .status(500)
-      .json({ message: "❌ An error occurred while updating the task." });
+      .json({ message: " An error occurred while updating the task." });
   }
 };
 
@@ -217,7 +217,7 @@ export const deleteTask = async (req, res) => {
     const { userId } = req.user;
 
     if (!taskId.match(/^[0-9a-fA-F]{24}$/)) {
-      return res.status(400).json({ message: "❌ Invalid task ID." });
+      return res.status(400).json({ message: " Invalid task ID." });
     }
 
     const task = await Task.findOneAndDelete({ _id: taskId, user: userId });
@@ -231,11 +231,11 @@ export const deleteTask = async (req, res) => {
         });
     }
 
-    res.status(200).json({ message: "✅ Task deleted successfully." });
+    res.status(200).json({ message: " Task deleted successfully." });
   } catch (error) {
-    console.error("❌ Error while deleting the task:", error.message);
+    
     res
       .status(500)
-      .json({ message: "❌ An error occurred while deleting the task." });
+      .json({ message: " An error occurred while deleting the task." });
   }
 };

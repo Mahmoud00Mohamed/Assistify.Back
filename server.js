@@ -13,8 +13,6 @@ import taskRoutes from "./routes/taskRoutes.js";
 import projectRoutes from "./routes/projectRoutes.js";
 import path from "path";
 import passport from "./config/passport.js";
-import session from "express-session";
-
 dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
@@ -49,13 +47,7 @@ app.use(
     crossOriginResourcePolicy: false,
   })
 );
-app.use(
-  session({
-    secret: process.env.SESSION_SECRET || "your_secret_key",
-    resave: false,
-    saveUninitialized: false,
-  })
-);
+
 // إعداد CORS
 const allowedOrigins = [
   "https://192.168.1.3:3001", // تم تصحيح العنوان
@@ -88,14 +80,11 @@ app.use(limiter);
 app.use(express.json());
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.use(express.static("public"));
-app.use(passport.initialize());
-app.use(passport.session());
+app.use(passport.initialize()); // تهيئة Passport
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api", taskRoutes);
 app.use("/api/projects", projectRoutes);
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, "0.0.0.0", () => {
-  console.log(`Server is running on port ${PORT}`);
-});
+const PORT = process.env.PORT || 3002;
+app.listen(PORT, "127.0.0.1", () => {});

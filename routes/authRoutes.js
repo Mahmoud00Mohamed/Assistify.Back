@@ -11,10 +11,12 @@ import {
   refreshAccessToken,
   logout,
   checkUsername,
+} from "../controllers/authController.js";
+import passport from "../config/passport.js";
+import {
   googleAuth,
   googleAuthCallback,
 } from "../controllers/authController.js";
-
 const router = express.Router();
 
 // إعداد معدل التحديد للمسارات الحساسة (5 محاولات خلال 15 دقيقة)
@@ -32,10 +34,15 @@ router.post("/password-reset", authLimiter, requestPasswordReset);
 router.post("/verify-email", authLimiter, verifyEmail);
 router.post("/resend-code", authLimiter, resendCode);
 router.get("/check-username", checkUsername);
-
-router.get("/google", googleAuth);
-router.get("/google/callback", googleAuthCallback);
-
+router.get("/google", googleAuth); // بدء عملية تسجيل الدخول بـ Google
+router.get(
+  "/google/callback",
+  passport.authenticate("google", {
+    session: false,
+    failureRedirect: "/login",
+  }),
+  googleAuthCallback // رد الاتصال بعد المصادقة
+);
 // باقي المسارات بدون Rate Limiting
 router.post("/reset-password", resetPassword);
 router.post("/refresh-token", refreshAccessToken);
