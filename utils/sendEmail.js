@@ -1,16 +1,12 @@
-import nodemailer from "nodemailer";
+import sgMail from "@sendgrid/mail";
 import dotenv from "dotenv";
 
 dotenv.config();
 
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-});
-// Base styles with a professional, premium aesthetic
+// تعيين مفتاح API الخاص بـ SendGrid من المتغيرات البيئية
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+
+// Base styles with a professional, premium aesthetic (نفس الأنماط بدون تغيير)
 const styles = {
   wrapper: `
     background: #f4f7fa;
@@ -99,7 +95,7 @@ const styles = {
   `,
 };
 
-// Template configuration object
+// Template configuration object (نفس القوالب بدون تغيير)
 const emailTemplates = {
   emailConfirmation: ({ code }) => ({
     subject: "Confirm Your Account",
@@ -220,35 +216,40 @@ const emailTemplates = {
   }),
 };
 
-// Shared footer component
+// Shared footer component (نفس التذييل بدون تغيير)
 const footer = () => `
   <div style="${styles.footer}">
     <p>Need help? Reach out to <a href="mailto:support@Assistify.com" style="${
       styles.link
     }">support@Assistify.com</a></p>
-    <p>&copy; ${new Date().getFullYear()} Assistify, Inc. All rights reserved.</p>
+    <p>© ${new Date().getFullYear()} Assistify, Inc. All rights reserved.</p>
     <p><a href="#" style="${styles.link}">Privacy</a> | 
        <a href="#" style="${styles.link}">Terms</a> | 
        <a href="#" style="${styles.link}">Unsubscribe</a></p>
   </div>
 `;
 
+// دالة إرسال البريد باستخدام SendGrid
 const sendEmail = async ({ to, subject, type, data }) => {
   try {
     const template = emailTemplates[type] || emailTemplates.default;
     const { subject: templateSubject, html } = template(data);
 
     const mailOptions = {
-      from: `"Assistify" <${process.env.EMAIL_USER}>`,
+      from: `"Assistify" <${process.env.EMAIL_FROM}>`,
       to,
       subject: subject || templateSubject,
       html,
     };
 
-    await transporter.sendMail(mailOptions);
-
+    const response = await sgMail.send(mailOptions);
     return { success: true, recipient: to };
   } catch (error) {
+    if (error.response && error.response.status === 403) {
+      console.log(
+        "تم تجاوز الحد اليومي للرسائل (100 رسالة). انتظر حتى الغد أو قم بترقية الخطة."
+      );
+    }
     throw new Error(`Failed to send email: ${error.message}`);
   }
 };
