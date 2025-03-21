@@ -170,7 +170,7 @@ export const requestPasswordReset = async (req, res) => {
     }
     const resetToken = generateAccessToken(user._id);
     await redis.set(`resetPassword:${user._id}`, resetToken, "EX", 10 * 60);
-    const resetLink = `https://www.assistify.site/authentication/reset-password?token=${resetToken}`;
+    const resetLink = `${process.env.FRONTEND_URL}/authentication/reset-password?token=${resetToken}`;
     await sendEmail({
       to: email,
       subject: "🔒 Password Reset",

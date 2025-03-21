@@ -3,10 +3,8 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-// تعيين مفتاح API الخاص بـ SendGrid من المتغيرات البيئية
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
-// Base styles with a professional, premium aesthetic (نفس الأنماط بدون تغيير)
 const styles = {
   wrapper: `
     background: #f4f7fa;
@@ -95,7 +93,6 @@ const styles = {
   `,
 };
 
-// Template configuration object (نفس القوالب بدون تغيير)
 const emailTemplates = {
   emailConfirmation: ({ code }) => ({
     subject: "Confirm Your Account",
@@ -216,7 +213,6 @@ const emailTemplates = {
   }),
 };
 
-// Shared footer component (نفس التذييل بدون تغيير)
 const footer = () => `
   <div style="${styles.footer}">
     <p>Need help? Reach out to <a href="mailto:support@Assistify.com" style="${
@@ -229,7 +225,6 @@ const footer = () => `
   </div>
 `;
 
-// دالة إرسال البريد باستخدام SendGrid
 const sendEmail = async ({ to, subject, type, data }) => {
   try {
     const template = emailTemplates[type] || emailTemplates.default;
@@ -240,9 +235,16 @@ const sendEmail = async ({ to, subject, type, data }) => {
       to,
       subject: subject || templateSubject,
       html,
+      trackingSettings: {
+        clickTracking: {
+          enable: false, // تعطيل تتبع النقرات
+          enableText: false,
+        },
+      },
     };
 
     const response = await sgMail.send(mailOptions);
+    console.log("Email sent with link:", data.resetLink); // للتحقق
     return { success: true, recipient: to };
   } catch (error) {
     if (error.response && error.response.status === 403) {
