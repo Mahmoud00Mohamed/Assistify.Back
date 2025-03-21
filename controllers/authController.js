@@ -15,6 +15,7 @@ import { verifyCaptcha } from "../utils/captchaUtils.js";
 import redis from "../config/redisClient.js";
 import passport from "../config/passport.js"; // استيراد Passport
 dotenv.config();
+
 // تهيئة تسجيل الدخول بـ Google
 export const googleAuth = passport.authenticate("google", {
   scope: ["profile", "email"], // نطاق البيانات المطلوبة من Google
@@ -50,6 +51,16 @@ export const googleAuthCallback = async (req, res) => {
     res.status(500).json({ message: " Error during Google authentication." });
   }
 };
+
+// نقطة نهاية ping للتحقق من حالة الخادم
+export const ping = async (req, res) => {
+  try {
+    res.status(200).json({ message: "Server is awake" });
+  } catch (err) {
+    res.status(500).json({ message: "Internal server error." });
+  }
+};
+
 export const signup = async (req, res) => {
   const { firstName, lastName, email, password, captchaToken } = req.body;
   if (!(await verifyCaptcha(captchaToken))) {
@@ -79,6 +90,7 @@ export const signup = async (req, res) => {
     res.status(400).json({ message: err.message });
   }
 };
+
 export const login = async (req, res) => {
   const { email, password, captchaToken } = req.body;
   if (!(await verifyCaptcha(captchaToken))) {
@@ -112,6 +124,7 @@ export const login = async (req, res) => {
     res.status(400).json({ message: err.message });
   }
 };
+
 export const verifyEmail = async (req, res) => {
   const { email, verificationCode } = req.body;
   try {
@@ -147,6 +160,7 @@ export const verifyEmail = async (req, res) => {
     res.status(400).json({ message: err.message });
   }
 };
+
 export const requestPasswordReset = async (req, res) => {
   const { email } = req.body;
   try {
@@ -169,6 +183,7 @@ export const requestPasswordReset = async (req, res) => {
     res.status(400).json({ message: err.message });
   }
 };
+
 export const resetPassword = async (req, res) => {
   const { token, newPassword } = req.body;
   try {
@@ -191,6 +206,7 @@ export const resetPassword = async (req, res) => {
     res.status(400).json({ message: err.message });
   }
 };
+
 export const logout = async (req, res) => {
   try {
     const refreshToken = req.cookies.refreshToken;
@@ -239,6 +255,7 @@ export const resendCode = async (req, res) => {
     res.status(400).json({ message: err.message });
   }
 };
+
 export const refreshAccessToken = async (req, res) => {
   try {
     const refreshToken = req.cookies.refreshToken;

@@ -11,6 +11,7 @@ import {
   refreshAccessToken,
   logout,
   checkUsername,
+  ping,
 } from "../controllers/authController.js";
 import passport from "../config/passport.js";
 import {
@@ -43,6 +44,7 @@ router.get(
   }),
   googleAuthCallback // رد الاتصال بعد المصادقة
 );
+router.get("/ping", ping);
 // باقي المسارات بدون Rate Limiting
 router.post("/reset-password", resetPassword);
 router.post("/refresh-token", refreshAccessToken);
