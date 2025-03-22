@@ -50,9 +50,10 @@ app.use(
 
 // إعداد CORS
 const allowedOrigins = [
-  "https://192.168.1.3:3001", // تم تصحيح العنوان
+  "https://192.168.1.3:3001",
   "https://localhost:3001",
   "https://www.assistify.site",
+  "https://assistify.site", // أضف هذا السطر
 ];
 app.use(
   cors({
