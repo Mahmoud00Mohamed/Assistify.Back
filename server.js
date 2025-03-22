@@ -49,27 +49,40 @@ app.use(
 );
 
 // إعداد CORS
-const allowedOrigins = [
-  "https://192.168.1.3:3001",
-  "https://localhost:3001",
-  "https://www.assistify.site",
-  "https://assistify.site", // أضف هذا السطر
-];
+// const allowedOrigins = [
+//   "https://192.168.1.3:3001",
+//   "https://localhost:3001",
+//   "https://www.assistify.site",
+//   "https://assistify.site",
+// ];
+// app.use(
+//   cors({
+//     origin: (origin, callback) => {
+//       if (!origin || allowedOrigins.includes(origin)) {
+//         callback(null, true);
+//       } else {
+//         callback(new Error("🚫 Access from this source is not allowed"));
+//       }
+//     },
+//     methods: ["GET", "POST", "PUT", "DELETE"],
+//     allowedHeaders: ["Content-Type", "Authorization"],
+//     credentials: true,
+//   })
+// );
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) {
+      if (!origin || origin.endsWith("assistify.site")) {
         callback(null, true);
       } else {
-        callback(new Error("🚫 Access from this source is not allowed"));
+        callback(new Error("Not allowed by CORS"));
       }
     },
+    credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
-    credentials: true,
   })
 );
-
 // Rate Limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,

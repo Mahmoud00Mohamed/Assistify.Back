@@ -259,22 +259,26 @@ export const resendCode = async (req, res) => {
 export const refreshAccessToken = async (req, res) => {
   try {
     const refreshToken = req.cookies.refreshToken;
+    console.log("Refresh Token received:", refreshToken ? "Yes" : "No");
     if (!refreshToken) {
+      console.log("No refresh token found in cookies");
       return res.status(400).json({ message: "⚠️ Refresh Token is required." });
     }
     let decoded;
     try {
       decoded = jwt.verify(refreshToken, publicKey, { algorithms: ["RS256"] });
     } catch (err) {
+      console.log("Refresh Token verification failed:", err.message);
       return res
         .status(401)
-        .json({ message: " Invalid or expired Refresh Token." });
+        .json({ message: "Invalid or expired Refresh Token." });
     }
     const storedToken = await redis.get(`refreshToken:${decoded.userId}`);
     if (!storedToken || storedToken !== refreshToken) {
+      console.log("Stored token mismatch or not found in Redis");
       return res
         .status(401)
-        .json({ message: " Invalid or expired Refresh Token." });
+        .json({ message: "Invalid or expired Refresh Token." });
     }
     const newAccessToken = generateAccessToken(decoded.userId);
     const newRefreshToken = generateRefreshToken(decoded.userId);
@@ -290,9 +294,11 @@ export const refreshAccessToken = async (req, res) => {
       sameSite: "None",
       maxAge: 30 * 24 * 60 * 60 * 1000,
     });
+    console.log("Refresh Token updated successfully");
     return res.status(200).json({ accessToken: newAccessToken });
   } catch (err) {
-    return res.status(500).json({ message: " Internal server error." });
+    console.log("Error in refreshAccessToken:", err.message);
+    return res.status(500).json({ message: "Internal server error." });
   }
 };
 
