@@ -29,7 +29,6 @@ const detectSuspiciousActivity = (req) => {
   if (
     blockedUserAgents.some((agent) => userAgent.toLowerCase().includes(agent))
   ) {
-    
     return true;
   }
 
@@ -42,41 +41,42 @@ const authMiddleware = async (req, res, next) => {
     let token =
       req.cookies?.accessToken || req.headers.authorization?.split(" ")[1];
 
+    console.log("Access Token received:", token ? "Yes" : "No");
+
     if (!token) {
+      console.log("No token provided in cookies or headers");
       return res
         .status(401)
-        .json({ message: " No token provided, access denied." });
+        .json({ message: "No token provided, access denied." });
     }
 
-    // 🔍 Detect suspicious activity
     if (detectSuspiciousActivity(req)) {
+      console.log("Suspicious activity detected");
       return res
         .status(403)
         .json({ message: "🚫 Suspicious activity detected, access blocked." });
     }
 
-    // ⛔ Check if the token is blacklisted
     const isBlacklisted = await TokenBlacklist.exists({ token });
     if (isBlacklisted) {
+      console.log("Token is blacklisted");
       return res
         .status(401)
-        .json({ message: " Token is invalid (blacklisted)." });
+        .json({ message: "Token is invalid (blacklisted)." });
     }
 
-    //  Verify token validity
     const decoded = verifyToken(token);
     if (!decoded) {
-      return res
-        .status(401)
-        .json({ message: " Token is invalid or expired." });
+      console.log("Token verification failed");
+      return res.status(401).json({ message: "Token is invalid or expired." });
     }
 
-    //  Pass user data to the request
+    console.log("Token verified successfully for user:", decoded.userId);
     req.user = decoded;
     next();
   } catch (err) {
-    
-    return res.status(401).json({ message: " Token is invalid or expired." });
+    console.log("Error in authMiddleware:", err.message);
+    return res.status(401).json({ message: "Token is invalid or expired." });
   }
 };
 
