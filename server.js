@@ -42,15 +42,10 @@ app.use(
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],
-        scriptSrc: [
-          "'self'",
-          "'unsafe-inline'",
-          "https://trusted.cdn.com",
-          "https://localhost:3001",
-        ],
+        scriptSrc: ["'self'", "'unsafe-inline'", "https://trusted.cdn.com"],
         styleSrc: ["'self'", "'unsafe-inline'"],
         imgSrc: ["'self'", "data:"],
-        connectSrc: ["'self'"],
+        connectSrc: ["'self'", "http://localhost:3001"], // إضافة localhost:3001
       },
     },
     xFrameOptions: { action: "sameorigin" },
