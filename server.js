@@ -19,7 +19,14 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const app = express();
-
+// ⭐ أضف هذا هنا قبل أي ميدلوير خاص بالمصادقة أو الجلسات
+app.use((req, res, next) => {
+  const userAgent = req.headers["user-agent"] || "";
+  if (userAgent.includes("Lighthouse") || userAgent.includes("Googlebot")) {
+    return next(); // السماح لـ PageSpeed بالدخول
+  }
+  next();
+});
 // ⭐ تفعيل trust proxy لدعم البروكسي مثل Render
 app.set("trust proxy", 1);
 
