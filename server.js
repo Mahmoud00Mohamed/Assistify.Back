@@ -45,7 +45,7 @@ app.use(
         scriptSrc: ["'self'", "'unsafe-inline'", "https://trusted.cdn.com"],
         styleSrc: ["'self'", "'unsafe-inline'"],
         imgSrc: ["'self'", "data:"],
-        connectSrc: ["'self'", "http://localhost:3001"], // إضافة localhost:3001
+        connectSrc: ["'self'", "https://localhost:3001"], // إضافة localhost:3001
       },
     },
     xFrameOptions: { action: "sameorigin" },
