@@ -45,7 +45,7 @@ app.use(
         scriptSrc: ["'self'", "'unsafe-inline'", "https://trusted.cdn.com"],
         styleSrc: ["'self'", "'unsafe-inline'"],
         imgSrc: ["'self'", "data:"],
-        connectSrc: ["'self'", "https://localhost:3001"], // إضافة localhost:3001
+        connectSrc: ["'self'"],
       },
     },
     xFrameOptions: { action: "sameorigin" },
@@ -55,27 +55,6 @@ app.use(
   })
 );
 
-// إعداد CORS
-// const allowedOrigins = [
-//   "https://192.168.1.3:3001",
-//   "https://localhost:3001",
-//   "https://www.assistify.site",
-//   "https://assistify.site",
-// ];
-// app.use(
-//   cors({
-//     origin: (origin, callback) => {
-//       if (!origin || allowedOrigins.includes(origin)) {
-//         callback(null, true);
-//       } else {
-//         callback(new Error("🚫 Access from this source is not allowed"));
-//       }
-//     },
-//     methods: ["GET", "POST", "PUT", "DELETE"],
-//     allowedHeaders: ["Content-Type", "Authorization"],
-//     credentials: true,
-//   })
-// );
 app.use(
   cors({
     origin: (origin, callback) => {
