@@ -26,7 +26,7 @@ export const publicKey = fs.readFileSync(
 export const generateAccessToken = (userId) => {
   return jwt.sign({ userId }, privateKey, {
     algorithm: "RS256",
-    expiresIn: "30m",
+    expiresIn: "10d",
   });
 };
 
