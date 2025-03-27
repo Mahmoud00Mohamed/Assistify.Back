@@ -215,13 +215,10 @@ const emailTemplates = {
 
 const footer = () => `
   <div style="${styles.footer}">
-    <p>Need help? Reach out to <a href="mailto:support@Assistify.com" style="${
+    <p>Need help? Reach out to <a href="mailto:support@assistify.site" style="${
       styles.link
     }">support@Assistify.com</a></p>
     <p>© ${new Date().getFullYear()} Assistify, Inc. All rights reserved.</p>
-    <p><a href="#" style="${styles.link}">Privacy</a> | 
-       <a href="#" style="${styles.link}">Terms</a> | 
-       <a href="#" style="${styles.link}">Unsubscribe</a></p>
   </div>
 `;
 
