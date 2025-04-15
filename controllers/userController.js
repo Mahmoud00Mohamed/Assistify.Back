@@ -1,5 +1,4 @@
 // controllers/userController.js
-
 import User from "../models/User.js";
 import argon2 from "argon2";
 import sendEmail from "../utils/sendEmail.js";
@@ -9,8 +8,10 @@ import { fileURLToPath } from "url";
 import Task from "../models/Task.js";
 import Project from "../models/Project.js";
 import TokenBlacklist from "../models/TokenBlacklist.js";
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
 export const getUser = async (req, res) => {
   try {
     const user = await User.findById(req.user.userId).select(
@@ -24,6 +25,7 @@ export const getUser = async (req, res) => {
     res.status(400).json({ message: err.message });
   }
 };
+
 export const updateUser = async (req, res) => {
   const { firstName, lastName, username } = req.body;
   try {
@@ -52,6 +54,7 @@ export const updateUser = async (req, res) => {
     res.status(400).json({ message: err.message });
   }
 };
+
 export const uploadProfilePicture = async (req, res) => {
   try {
     const user = await User.findById(req.user.userId);
@@ -86,6 +89,7 @@ export const uploadProfilePicture = async (req, res) => {
     });
   }
 };
+
 export const updatePassword = async (req, res) => {
   const { oldPassword, newPassword } = req.body;
   try {
@@ -106,13 +110,13 @@ export const updatePassword = async (req, res) => {
     await user.save();
     res.status(200).json({ message: "Password updated successfully." });
   } catch (err) {
-    
     res.status(500).json({
       error:
         "An unexpected error occurred while updating the password. Please try again later.",
     });
   }
 };
+
 export const requestEmailUpdate = async (req, res) => {
   const { newEmail } = req.body;
   try {
@@ -167,6 +171,7 @@ export const requestEmailUpdate = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
 export const verifyEmailUpdate = async (req, res) => {
   const { verificationCode, password } = req.body;
   try {
@@ -187,12 +192,14 @@ export const verifyEmailUpdate = async (req, res) => {
     user.email = user.newEmail;
     user.newEmail = undefined;
     user.emailVerificationCode = undefined;
+    user.googleId = undefined; // حذف googleId عند تغيير البريد الإلكتروني
     await user.save();
     res.status(200).json({ message: "Email updated successfully." });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
+
 export const deleteUser = async (req, res) => {
   try {
     const userId = req.user.userId;
@@ -253,7 +260,6 @@ export const deleteUser = async (req, res) => {
         " Account and all associated data have been successfully deleted.",
     });
   } catch (error) {
-    
     res
       .status(500)
       .json({ message: " An error occurred while deleting the account." });
