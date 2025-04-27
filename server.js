@@ -13,21 +13,29 @@ import taskRoutes from "./routes/taskRoutes.js";
 import projectRoutes from "./routes/projectRoutes.js";
 import path from "path";
 import passport from "./config/passport.js";
+
 dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const app = express();
-// ⭐ أضف هذا هنا قبل أي ميدلوير خاص بالمصادقة أو الجلسات
+
+// نقطة نهاية لـ UptimeRobot بدون قيود CORS
+app.get("/ping", (req, res) => {
+  res.status(200).send("OK");
+});
+
+// ميدلوير للسماح لـ Lighthouse وGooglebot
 app.use((req, res, next) => {
   const userAgent = req.headers["user-agent"] || "";
   if (userAgent.includes("Lighthouse") || userAgent.includes("Googlebot")) {
-    return next(); // السماح لـ PageSpeed بالدخول
+    return next();
   }
   next();
 });
-// ⭐ تفعيل trust proxy لدعم البروكسي مثل Render
+
+// تفعيل trust proxy لدعم البروكسي مثل Render
 app.set("trust proxy", 1);
 
 // الاتصال بقاعدة البيانات
@@ -55,6 +63,7 @@ app.use(
   })
 );
 
+// تطبيق CORS
 app.use(
   cors({
     origin: (origin, callback) => {
@@ -69,6 +78,7 @@ app.use(
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
+
 // Rate Limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -77,16 +87,21 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
-// باقي الكود...
+// ميدلوير لتحليل JSON وخدمة الملفات الثابتة
 app.use(express.json());
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.use(express.static("public"));
-app.use(passport.initialize()); // تهيئة Passport
+
+// تهيئة Passport
+app.use(passport.initialize());
+
+// الروابط (Routes)
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api", taskRoutes);
 app.use("/api/projects", projectRoutes);
 
+// تشغيل الخادم
 const PORT = process.env.PORT || 3002;
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`🚀 Server running on port ${PORT}`);
